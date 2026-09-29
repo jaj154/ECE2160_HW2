@@ -1,0 +1,2 @@
+backend,idle_w,io_total_w,io_total_sd,io_dyn_w,mem_total_w,mem_total_sd,mem_dyn_w,compute_total_w,compute_total_sd,compute_dyn_w,io_pct_dyn,mem_pct_dyn,compute_pct_dyn
+vcgencmd,2.5804,4.3364,0.0180,1.7560,4.3924,0.0064,1.8119,4.4563,0.0107,1.8758,32.3,33.3,34.5

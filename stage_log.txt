@@ -1,0 +1,43 @@
+=== Per-Stage Power Isolation ===
+PMIC backend: vcgencmd   sample interval: 30 ms   5 repeats/stage
+Each stage driven in isolation under sustained load; idle floor
+subtracted to isolate per-stage DYNAMIC power.
+
+--- IDLE floor ---
+  idle     repeat 1: core=0.4808 W total=2.5746 W (74 samples)
+  idle     repeat 2: core=0.4860 W total=2.5841 W (74 samples)
+  idle     repeat 3: core=0.4812 W total=2.5774 W (74 samples)
+  idle     repeat 4: core=0.4881 W total=2.5842 W (74 samples)
+  idle     repeat 5: core=0.4878 W total=2.5817 W (74 samples)
+--- I/O stage ---
+  io       repeat 1: core=1.9721 W total=4.3072 W (74 samples)
+  io       repeat 2: core=1.9933 W total=4.3285 W (74 samples)
+  io       repeat 3: core=2.0063 W total=4.3400 W (74 samples)
+  io       repeat 4: core=2.0136 W total=4.3448 W (74 samples)
+  io       repeat 5: core=2.0240 W total=4.3614 W (74 samples)
+--- MEMORY stage ---
+  memory   repeat 1: core=2.0491 W total=4.3833 W (74 samples)
+  memory   repeat 2: core=2.0511 W total=4.3911 W (74 samples)
+  memory   repeat 3: core=2.0495 W total=4.3886 W (74 samples)
+  memory   repeat 4: core=2.0587 W total=4.4015 W (74 samples)
+  memory   repeat 5: core=2.0596 W total=4.3974 W (74 samples)
+--- COMPUTE stage ---
+  compute  repeat 1: core=2.1067 W total=4.4509 W (74 samples)
+  compute  repeat 2: core=2.1053 W total=4.4556 W (74 samples)
+  compute  repeat 3: core=2.0983 W total=4.4400 W (74 samples)
+  compute  repeat 4: core=2.1178 W total=4.4631 W (74 samples)
+  compute  repeat 5: core=2.1191 W total=4.4716 W (74 samples)
+
+=================== PER-STAGE POWER SUMMARY ===================
+Idle floor: 2.5804 +/- 0.0038 W
+
+  stage    total W        dynamic W        %% of dynamic 
+  I/O      4.3364        1.7560           32.3%
+  Memory   4.3924        1.8119           33.3%
+  Compute  4.4563        1.8758           34.5%
+
+This is a DIRECT measurement of each stage's dynamic power, so it
+replaces the time-share-as-energy-share assumption with data.
+
+Wrote stage_results.csv
+(checksum 9434901274)

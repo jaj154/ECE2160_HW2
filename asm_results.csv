@@ -1,0 +1,3 @@
+variant,checksum,ns_per_call_mean,ns_per_call_std,core_w_mean,core_w_std,total_w_mean,total_w_std,energy_per_call_uj
+multiply,562984002912256,4339.18,6.16,1.8730,0.0110,4.1912,0.0181,18.1865
+shift,562984002912256,4208.62,5.56,1.7909,0.0146,4.0953,0.0247,17.2354
