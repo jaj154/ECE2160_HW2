@@ -1,0 +1,2 @@
+peripheral_state,idle_total_w,idle_total_w_std,idle_core_w,active_total_w,active_total_w_std,active_core_w,static_w_derived,dynamic_w_derived,dynamic_pct_of_active,seconds_per_pass,active_energy_per_pass_j,mj_per_prediction,avgW_duty_1.000,avgW_duty_0.500,avgW_duty_0.100,avgW_duty_0.010,avgW_duty_0.001,Jperiod_duty_1.000,Jperiod_duty_0.500,Jperiod_duty_0.100,Jperiod_duty_0.010,Jperiod_duty_0.001
+unspecified,2.6166,0.0133,0.5062,3.9554,0.0303,1.6697,2.6166,1.3388,33.85,0.000907,0.0036,0.1122,3.9554,3.2860,2.7504,2.6299,2.6179,0.0036,0.0060,0.0250,0.2386,2.3754
