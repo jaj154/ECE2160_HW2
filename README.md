@@ -55,8 +55,43 @@ present it will report real numbers.
 
 ```
 ./bin/critter_main          # original single-run pipeline report
-sudo ./bin/run_experiments  # the power experiment suite
+sudo ./bin/run_experiments  # the config-sweep power suite (clock/cores/governor)
+./bin/analyze_embedded      # embedded power aspects (idle, duty-cycle, static/dynamic)
+sudo ./scripts/peripheral_states.sh   # runs analyze_embedded per GUI/BT state
 ```
+
+### bin/analyze_embedded — embedded power aspects
+
+A second harness that measures what the config sweep did not: the
+platform power floor and how it dominates a mostly-idle deployment.
+Reports (console + `embedded_results.csv`):
+- **Idle power** — measured with the process *blocked* (nanosleep,
+  not busy-looping) so the CPU can drop into shallow idle states, with
+  the network left up. This is the realistic platform floor.
+- **Active power** — the pipeline under sustained load, for contrast.
+- **Static vs dynamic split** — *derived* (not directly measurable on a
+  running Linux box): static ≈ idle floor, dynamic ≈ active − idle.
+  Labelled as an estimate throughout.
+- **Duty-cycled energy model** — the key deployment result: models one
+  pipeline pass per sample period followed by idle for the remainder,
+  swept across duty cycles from 100% down to 0.1%, showing average
+  power collapsing toward the idle floor as the duty cycle shrinks.
+  This is what demonstrates that idle power, not active-config choice,
+  governs a real monitor's energy budget.
+
+Doesn't need root (PMIC reads work unprivileged), but the process-idle
+figure is cleanest on an otherwise-quiet machine.
+
+### scripts/peripheral_states.sh — GUI/Bluetooth comparison
+
+Toggling the desktop GUI and Bluetooth are whole-board, system-level
+actions, so they're driven from a script that runs `analyze_embedded`
+once per state (as-found, GUI-off/BT-on, GUI-off/BT-off, GUI-on/BT-off)
+and concatenates the per-state rows into `embedded_results_all.csv`.
+
+**Run it over SSH, not from the desktop** — stopping the display
+manager will drop a local session. The script captures your original
+GUI/BT state and restores it on exit (including Ctrl-C) via a trap.
 
 **`run_experiments` needs `sudo`.** Writing to
 `/sys/devices/system/cpu/.../scaling_governor`,

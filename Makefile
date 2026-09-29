@@ -15,7 +15,7 @@ COMMON_OBJS := \
 
 .PHONY: all clean run
 
-all: $(BIN_DIR)/critter_main $(BIN_DIR)/run_experiments
+all: $(BIN_DIR)/critter_main $(BIN_DIR)/run_experiments $(BIN_DIR)/analyze_embedded
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
@@ -29,8 +29,11 @@ $(BIN_DIR)/critter_main: $(BIN_DIR)/main.o $(COMMON_OBJS)
 $(BIN_DIR)/run_experiments: $(BIN_DIR)/run_experiments.o $(BIN_DIR)/power_config.o $(BIN_DIR)/power_monitor.o $(COMMON_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+$(BIN_DIR)/analyze_embedded: $(BIN_DIR)/analyze_embedded.o $(BIN_DIR)/power_monitor.o $(COMMON_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 run: all
 	./$(BIN_DIR)/critter_main
 
 clean:
-	rm -rf $(BIN_DIR) results.csv
+	rm -rf $(BIN_DIR) results.csv embedded_results.csv embedded_results_all.csv
