@@ -32,6 +32,20 @@ void stage_stats_record(stage_stats_t *s, double elapsed_ns)
     s->calls++;
 }
 
+void stage_stats_merge(stage_stats_t *dst, const stage_stats_t *src)
+{
+    if (src->calls == 0) return;
+    if (dst->calls == 0) {
+        dst->min_ns = src->min_ns;
+        dst->max_ns = src->max_ns;
+    } else {
+        if (src->min_ns < dst->min_ns) dst->min_ns = src->min_ns;
+        if (src->max_ns > dst->max_ns) dst->max_ns = src->max_ns;
+    }
+    dst->calls    += src->calls;
+    dst->total_ns += src->total_ns;
+}
+
 void stage_stats_summary(const stage_stats_t *s, double wall_seconds,
                           double *out_avg_ns, double *out_pct_of_wall)
 {

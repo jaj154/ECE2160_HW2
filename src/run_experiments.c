@@ -9,14 +9,37 @@
  *
  * against all three Critter prototype units (io_unit, memory_unit,
  * compute_unit) driven together as one pipeline, exactly as they run
- * in the shipped main.c. Every trial runs an IDENTICAL synthetic
- * workload (fixed RNG seed in sensor_hw.c) so any difference in time
- * or power between trials is attributable to the configuration change
- * under test, not to different input data.
+ * in the shipped main.c.
  *
- * Output: a human-readable report to stdout (mentions the setting
- * being changed before its results, as requested) AND results.csv in
- * the working directory for dropping straight into a spreadsheet /
+ * --- FIX (v2) -----------------------------------------------------
+ * v1 called pipeline_run() exactly ONCE per trial. The whole pipeline
+ * finishes in under ~1-3 ms, but `vcgencmd pmic_read_adc` itself takes
+ * on the order of 100-300 ms to fork/exec/read the PMIC over I2C. That
+ * meant most trials ended before the power-monitor thread's first
+ * sample even returned -> 0 or 1 power samples per trial, and the
+ * "elapsed_seconds" the harness measured was dominated by that single
+ * vcgencmd call's latency, not by the actual workload.
+ *
+ * v2 fixes this by calibrating each trial (one throwaway pipeline_run
+ * call) to see how long a single pass takes under the CURRENT config,
+ * then looping pipeline_run() enough times to keep the workload
+ * running for TARGET_TRIAL_SECONDS. This gives the power monitor a
+ * real sampling window (dozens of vcgencmd reads instead of 0-1), and
+ * makes energy-per-prediction a number built on an actual average
+ * rather than one race-condition sample. It also gives governors like
+ * `ondemand`/`schedutil` enough sustained load to actually ramp
+ * frequency, instead of measuring them mid-ramp on a sub-millisecond
+ * burst (which is what happened to Trial 5 in the v1 data: ondemand
+ * never left 1.6 GHz because the burst was over before it could react).
+ * -------------------------------------------------------------------
+ *
+ * Every trial still runs the IDENTICAL synthetic workload (fixed RNG
+ * seed in sensor_hw.c, same TOTAL_TICKS_PER_CALL every iteration), so
+ * any difference in time/power between trials is attributable to the
+ * configuration change under test, not to different input data.
+ *
+ * Output: a human-readable report to stdout AND results.csv in the
+ * working directory for dropping straight into a spreadsheet /
  * plotting tool for the paper.
  */
 
@@ -29,8 +52,14 @@
 #include "power_config.h"
 #include "power_monitor.h"
 
-#define TOTAL_TICKS        4096u
-#define POWER_SAMPLE_MS      200   /* vcgencmd poll interval while a trial runs */
+#define TOTAL_TICKS_PER_CALL   4096u
+#define POWER_SAMPLE_MS         150   /* vcgencmd poll interval while a trial runs */
+#define TARGET_TRIAL_SECONDS    3.0   /* how long each trial should keep the
+                                        * workload running, so the power
+                                        * monitor gets a real sample window */
+#define MIN_ITERATIONS           20u
+#define MAX_ITERATIONS        20000u  /* safety cap; should never be hit in
+                                        * practice since one pass is ~1-3 ms */
 
 typedef enum { T_BASELINE, T_CLOCK, T_CORES, T_GOVERNOR } trial_kind_t;
 
@@ -43,6 +72,22 @@ typedef struct {
     const char  *governor;     /* T_GOVERNOR */
 } trial_spec_t;
 
+/* Aggregated result across every pipeline_run() iteration in one trial. */
+typedef struct {
+    uint32_t     iterations;
+    double       total_wall_seconds;   /* sum of pipeline_run()'s own wall time */
+    uint32_t     total_ticks;          /* sum across iterations */
+    uint32_t     summaries_produced;   /* sum across iterations */
+    uint32_t     predictions_made;     /* sum across iterations */
+    uint64_t     total_samples_in;
+    uint64_t     total_samples_kept;
+    prediction_t last_prediction;      /* from the final iteration */
+    int          have_prediction;
+    stage_stats_t io_stats;
+    stage_stats_t mem_stats;
+    stage_stats_t compute_stats;
+} agg_result_t;
+
 static FILE *g_csv = NULL;
 
 static void csv_header(void)
@@ -51,14 +96,17 @@ static void csv_header(void)
     if (!g_csv) return;
     fprintf(g_csv,
         "trial,category,param,requested_ok,measured_freq_khz,measured_governor,"
-        "wall_seconds,avg_core_power_w,avg_summed_rails_w,avg_corrected_total_w,"
-        "energy_joules,energy_per_prediction_mj,samples_in,samples_kept,reject_pct,"
-        "summaries_produced,predictions_made,power_sample_count\n");
+        "iterations,total_wall_seconds,avg_seconds_per_call,"
+        "avg_core_power_w,avg_summed_rails_w,avg_corrected_total_w,"
+        "power_sample_count,power_window_seconds,"
+        "energy_joules,energy_per_prediction_mj,"
+        "total_samples_in,total_samples_kept,reject_pct,"
+        "total_summaries_produced,total_predictions_made\n");
 }
 
 static void csv_row(int trial_no, const char *category, const char *param, int requested_ok,
                      long measured_freq_khz, const char *measured_gov,
-                     const pipeline_result_t *r, const power_summary_t *p)
+                     const agg_result_t *r, const power_summary_t *p)
 {
     if (!g_csv) return;
     uint64_t rejected = r->total_samples_in - r->total_samples_kept;
@@ -66,13 +114,17 @@ static void csv_row(int trial_no, const char *category, const char *param, int r
         100.0 * (double)rejected / (double)r->total_samples_in : 0.0;
     double energy_per_pred_mj = (r->predictions_made > 0) ?
         (p->energy_joules / (double)r->predictions_made) * 1000.0 : 0.0;
+    double avg_sec_per_call = (r->iterations > 0) ?
+        (r->total_wall_seconds / (double)r->iterations) : 0.0;
 
-    fprintf(g_csv, "%d,%s,%s,%d,%ld,%s,%.6f,%.4f,%.4f,%.4f,%.4f,%.4f,%llu,%llu,%.2f,%u,%u,%ld\n",
+    fprintf(g_csv, "%d,%s,%s,%d,%ld,%s,%u,%.6f,%.9f,%.4f,%.4f,%.4f,%ld,%.4f,%.4f,%.4f,%llu,%llu,%.2f,%u,%u\n",
             trial_no, category, param, requested_ok, measured_freq_khz, measured_gov,
-            r->wall_seconds, p->avg_core_power_w, p->avg_summed_rails_w,
-            p->avg_corrected_total_w, p->energy_joules, energy_per_pred_mj,
+            r->iterations, r->total_wall_seconds, avg_sec_per_call,
+            p->avg_core_power_w, p->avg_summed_rails_w, p->avg_corrected_total_w,
+            p->sample_count, p->elapsed_seconds,
+            p->energy_joules, energy_per_pred_mj,
             (unsigned long long)r->total_samples_in, (unsigned long long)r->total_samples_kept,
-            reject_pct, r->summaries_produced, r->predictions_made, p->sample_count);
+            reject_pct, r->summaries_produced, r->predictions_made);
 }
 
 /* Applies the config for one trial. Returns 1 if the requested change
@@ -103,6 +155,63 @@ static int apply_trial(const trial_spec_t *t)
     return 0;
 }
 
+/* Runs the pipeline repeatedly under the CURRENT config until at least
+ * TARGET_TRIAL_SECONDS of wall time has elapsed (or MAX_ITERATIONS is
+ * hit), aggregating results as it goes. This is what gives the power
+ * monitor a real sampling window instead of racing a single ~1ms call. */
+static void run_workload_for_target_duration(agg_result_t *agg)
+{
+    memset(agg, 0, sizeof(*agg));
+    stage_stats_init(&agg->io_stats, "io_unit");
+    stage_stats_init(&agg->mem_stats, "memory_unit");
+    stage_stats_init(&agg->compute_stats, "compute_unit");
+
+    /* Calibration pass: measure one call under the current config so
+     * we know how many iterations are needed to reach the target
+     * duration (faster configs need more iterations, slower configs
+     * need fewer -- this keeps every trial's *measurement window*
+     * roughly equal even though throughput differs). */
+    pipeline_result_t calib;
+    pipeline_run(TOTAL_TICKS_PER_CALL, &calib, /*verbose=*/0);
+
+    uint32_t iterations = MIN_ITERATIONS;
+    if (calib.wall_seconds > 1e-9) {
+        double needed = TARGET_TRIAL_SECONDS / calib.wall_seconds;
+        if (needed > (double)MAX_ITERATIONS) needed = (double)MAX_ITERATIONS;
+        if (needed > (double)MIN_ITERATIONS) iterations = (uint32_t)needed;
+    }
+
+    /* Fold the calibration pass itself into the aggregate so it isn't wasted. */
+    agg->iterations = 1;
+    agg->total_wall_seconds  += calib.wall_seconds;
+    agg->total_ticks         += calib.total_ticks;
+    agg->summaries_produced  += calib.summaries_produced;
+    agg->predictions_made    += calib.predictions_made;
+    agg->total_samples_in    += calib.total_samples_in;
+    agg->total_samples_kept  += calib.total_samples_kept;
+    if (calib.have_prediction) { agg->last_prediction = calib.last_prediction; agg->have_prediction = 1; }
+    stage_stats_merge(&agg->io_stats, &calib.io_stats);
+    stage_stats_merge(&agg->mem_stats, &calib.mem_stats);
+    stage_stats_merge(&agg->compute_stats, &calib.compute_stats);
+
+    for (uint32_t i = 1; i < iterations; i++) {
+        pipeline_result_t r;
+        pipeline_run(TOTAL_TICKS_PER_CALL, &r, /*verbose=*/0);
+
+        agg->iterations++;
+        agg->total_wall_seconds  += r.wall_seconds;
+        agg->total_ticks         += r.total_ticks;
+        agg->summaries_produced  += r.summaries_produced;
+        agg->predictions_made    += r.predictions_made;
+        agg->total_samples_in    += r.total_samples_in;
+        agg->total_samples_kept  += r.total_samples_kept;
+        if (r.have_prediction) { agg->last_prediction = r.last_prediction; agg->have_prediction = 1; }
+        stage_stats_merge(&agg->io_stats, &r.io_stats);
+        stage_stats_merge(&agg->mem_stats, &r.mem_stats);
+        stage_stats_merge(&agg->compute_stats, &r.compute_stats);
+    }
+}
+
 static void run_one_trial(int trial_no, const char *category, const char *param,
                            const trial_spec_t *t, const power_config_snapshot_t *baseline)
 {
@@ -129,54 +238,64 @@ static void run_one_trial(int trial_no, const char *category, const char *param,
 
     power_monitor_t *pm = power_monitor_start(POWER_SAMPLE_MS);
 
-    pipeline_result_t result;
-    pipeline_run(TOTAL_TICKS, &result, /*verbose=*/0);
+    agg_result_t agg;
+    run_workload_for_target_duration(&agg);
 
     power_summary_t psum;
     power_monitor_stop(pm, &psum);
 
     /* --- processing/validation info: proves the pipeline still did
-     * the same work correctly under this configuration ------------- */
-    uint64_t rejected = result.total_samples_in - result.total_samples_kept;
-    double reject_pct = result.total_samples_in ?
-        100.0 * (double)rejected / (double)result.total_samples_in : 0.0;
+     * the same work correctly under this configuration, every single
+     * iteration ------------------------------------------------------ */
+    uint64_t rejected = agg.total_samples_in - agg.total_samples_kept;
+    double reject_pct = agg.total_samples_in ?
+        100.0 * (double)rejected / (double)agg.total_samples_in : 0.0;
     double io_avg_ns, io_pct, mem_avg_ns, mem_pct, comp_avg_ns, comp_pct;
-    stage_stats_summary(&result.io_stats, result.wall_seconds, &io_avg_ns, &io_pct);
-    stage_stats_summary(&result.mem_stats, result.wall_seconds, &mem_avg_ns, &mem_pct);
-    stage_stats_summary(&result.compute_stats, result.wall_seconds, &comp_avg_ns, &comp_pct);
+    stage_stats_summary(&agg.io_stats, agg.total_wall_seconds, &io_avg_ns, &io_pct);
+    stage_stats_summary(&agg.mem_stats, agg.total_wall_seconds, &mem_avg_ns, &mem_pct);
+    stage_stats_summary(&agg.compute_stats, agg.total_wall_seconds, &comp_avg_ns, &comp_pct);
+
+    double avg_sec_per_call = agg.total_wall_seconds / (double)agg.iterations;
 
     printf("  --- processing validation ---\n");
-    printf("    wall clock              : %.4f s  (%u ticks)\n", result.wall_seconds, result.total_ticks);
-    printf("    io_unit avg/call        : %.1f ns  (%.2f%% of wall)\n", io_avg_ns, io_pct);
-    printf("    memory_unit avg/call    : %.1f ns  (%.2f%% of wall)\n", mem_avg_ns, mem_pct);
-    printf("    compute_unit avg/call   : %.1f ns  (%.2f%% of wall)\n", comp_avg_ns, comp_pct);
+    printf("    pipeline iterations run : %u  (%.3f s total workload time, %.6f s/call avg)\n",
+           agg.iterations, agg.total_wall_seconds, avg_sec_per_call);
+    printf("    io_unit avg/call        : %.1f ns  (%.2f%% of workload time)\n", io_avg_ns, io_pct);
+    printf("    memory_unit avg/call    : %.1f ns  (%.2f%% of workload time)\n", mem_avg_ns, mem_pct);
+    printf("    compute_unit avg/call   : %.1f ns  (%.2f%% of workload time)\n", comp_avg_ns, comp_pct);
     printf("    samples in/kept/rej%%    : %llu / %llu / %.2f%%\n",
-           (unsigned long long)result.total_samples_in,
-           (unsigned long long)result.total_samples_kept, reject_pct);
-    printf("    summaries/predictions   : %u / %u\n", result.summaries_produced, result.predictions_made);
-    if (result.have_prediction) {
+           (unsigned long long)agg.total_samples_in,
+           (unsigned long long)agg.total_samples_kept, reject_pct);
+    printf("    summaries/predictions   : %u / %u  (totals across all iterations)\n",
+           agg.summaries_produced, agg.predictions_made);
+    if (agg.have_prediction) {
         printf("    last prediction         : trend=%+7.4f C/tick projected=%6.2fC state=%s\n",
-               result.last_prediction.trend_slope_c_per_tick,
-               result.last_prediction.projected_temp_c,
-               hvac_state_str(result.last_prediction.state));
+               agg.last_prediction.trend_slope_c_per_tick,
+               agg.last_prediction.projected_temp_c,
+               hvac_state_str(agg.last_prediction.state));
     }
 
     printf("  --- power ---\n");
     if (psum.vcgencmd_available) {
-        double energy_per_pred_mj = (result.predictions_made > 0) ?
-            (psum.energy_joules / (double)result.predictions_made) * 1000.0 : 0.0;
-        printf("    vcgencmd samples        : %ld (over %.2f s)\n", psum.sample_count, psum.elapsed_seconds);
+        double energy_per_pred_mj = (agg.predictions_made > 0) ?
+            (psum.energy_joules / (double)agg.predictions_made) * 1000.0 : 0.0;
+        printf("    vcgencmd samples        : %ld (over %.2f s sampling window)\n", psum.sample_count, psum.elapsed_seconds);
         printf("    avg VDD_CORE power      : %.4f W\n", psum.avg_core_power_w);
         printf("    avg summed-rail power   : %.4f W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)\n", psum.avg_summed_rails_w);
         printf("    avg corrected est. power: %.4f W  (linear-calibrated, see docs/power_model_notes.md)\n", psum.avg_corrected_total_w);
-        printf("    energy for this run     : %.4f J\n", psum.energy_joules);
-        printf("    energy per prediction   : %.4f mJ\n", energy_per_pred_mj);
+        printf("    energy over sampling win: %.4f J\n", psum.energy_joules);
+        printf("    energy per prediction   : %.4f mJ  (across %u predictions)\n", energy_per_pred_mj, agg.predictions_made);
+        if (psum.sample_count < 5) {
+            printf("    NOTE: only %ld power sample(s) captured -- still low. Consider raising\n"
+                   "          TARGET_TRIAL_SECONDS or lowering POWER_SAMPLE_MS in run_experiments.c.\n",
+                   psum.sample_count);
+        }
     } else {
         printf("    vcgencmd not available on this system -- power fields are N/A.\n");
         printf("    (expected on non-Pi hardware; run on the Pi 5 for real numbers)\n");
     }
 
-    csv_row(trial_no, category, param, applied_ok, measured_freq, measured_gov, &result, &psum);
+    csv_row(trial_no, category, param, applied_ok, measured_freq, measured_gov, &agg, &psum);
 }
 
 int main(int argc, char **argv)
@@ -191,9 +310,10 @@ int main(int argc, char **argv)
             "'requested change applied: NO'. Re-run with: sudo ./run_experiments\n\n");
     }
 
-    printf("=== Critter Power Experiment Harness ===\n");
-    printf("Workload: full pipeline (io_unit -> memory_unit -> compute_unit), %u ticks,\n", TOTAL_TICKS);
-    printf("identical synthetic sensor data on every trial (fixed RNG seed).\n");
+    printf("=== Critter Power Experiment Harness (v2: sustained-load sampling) ===\n");
+    printf("Workload: full pipeline (io_unit -> memory_unit -> compute_unit), %u ticks/call,\n", TOTAL_TICKS_PER_CALL);
+    printf("looped for ~%.1f s per trial so the power monitor gets a real sample window.\n", TARGET_TRIAL_SECONDS);
+    printf("Identical synthetic sensor data on every call (fixed RNG seed).\n");
 
     power_config_snapshot_t baseline;
     pc_snapshot(&baseline);

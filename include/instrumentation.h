@@ -16,6 +16,11 @@ typedef struct {
 void stage_stats_init(stage_stats_t *s, const char *name);
 void stage_stats_record(stage_stats_t *s, double elapsed_ns);
 
+/* Folds src's accumulated counts into dst (dst.calls/total_ns/min/max
+ * become the combined totals). Used by the power harness to aggregate
+ * many pipeline_run() iterations into one trial-level summary. */
+void stage_stats_merge(stage_stats_t *dst, const stage_stats_t *src);
+
 /* Human-readable single-line report (used by the standalone main.c). */
 void stage_stats_report(const stage_stats_t *s, double wall_seconds);
 
