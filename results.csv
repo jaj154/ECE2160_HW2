@@ -1,0 +1,11 @@
+trial,category,param,requested_ok,measured_freq_khz,measured_governor,wall_seconds,avg_core_power_w,avg_summed_rails_w,avg_corrected_total_w,energy_joules,energy_per_prediction_mj,samples_in,samples_kept,reject_pct,summaries_produced,predictions_made,power_sample_count
+1,baseline,default,1,2400000,ondemand,0.000918,0.0000,0.0000,0.0000,0.0000,0.0000,4096,4066,0.73,256,32,0
+2,clock,max,1,2400000,userspace,0.000916,0.0000,0.0000,0.0000,0.0000,0.0000,4096,4066,0.73,256,32,0
+3,clock,mid,1,2000000,userspace,0.001095,0.0000,0.0000,0.0000,0.0000,0.0000,4096,4066,0.73,256,32,0
+4,clock,min,1,1500000,userspace,0.001457,0.0000,0.0000,0.0000,0.0000,0.0000,4096,4066,0.73,256,32,0
+5,cores,4,1,1900000,ondemand,0.001138,0.0000,0.0000,0.0000,0.0000,0.0000,4096,4066,0.73,256,32,0
+6,cores,2,1,2300000,ondemand,0.000948,0.0000,0.0000,0.0000,0.0000,0.0000,4096,4066,0.73,256,32,0
+7,cores,1,1,2400000,ondemand,0.000913,0.0000,0.0000,0.0000,0.0000,0.0000,4096,4066,0.73,256,32,0
+8,governor,performance,1,2400000,performance,0.000914,0.0000,0.0000,0.0000,0.0000,0.0000,4096,4066,0.73,256,32,0
+9,governor,schedutil,1,2400000,schedutil,0.002344,0.9451,2.3279,3.2536,0.7362,23.0060,4096,4066,0.73,256,32,1
+10,governor,powersave,1,1500000,powersave,0.001439,0.0000,0.0000,0.0000,0.0000,0.0000,4096,4066,0.73,256,32,0

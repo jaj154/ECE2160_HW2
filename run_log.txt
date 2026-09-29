@@ -1,0 +1,182 @@
+=== Critter Power Experiment Harness ===
+Workload: full pipeline (io_unit -> memory_unit -> compute_unit), 4096 ticks,
+identical synthetic sensor data on every trial (fixed RNG seed).
+Captured baseline config: cpu0 governor=ondemand, 4 cpu(s) present.
+
+---------------------------------------------------------------
+Trial 1 [baseline]: Baseline (system default config, unmodified)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 2400000 kHz
+  measured cpu0 governor   : ondemand
+  --- processing validation ---
+    wall clock              : 0.0009 s  (4096 ticks)
+    io_unit avg/call        : 123.8 ns  (55.25% of wall)
+    memory_unit avg/call    : 146.4 ns  (4.08% of wall)
+    compute_unit avg/call   : 156.9 ns  (0.55% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+
+---------------------------------------------------------------
+Trial 2 [clock]: Clock speed: max (2400000 kHz, performance-pinned)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 2400000 kHz
+  measured cpu0 governor   : userspace
+  --- processing validation ---
+    wall clock              : 0.0009 s  (4096 ticks)
+    io_unit avg/call        : 121.3 ns  (54.25% of wall)
+    memory_unit avg/call    : 147.5 ns  (4.12% of wall)
+    compute_unit avg/call   : 149.2 ns  (0.52% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+
+---------------------------------------------------------------
+Trial 3 [clock]: Clock speed: mid (1950000 kHz, performance-pinned)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 2000000 kHz
+  measured cpu0 governor   : userspace
+  --- processing validation ---
+    wall clock              : 0.0011 s  (4096 ticks)
+    io_unit avg/call        : 147.0 ns  (54.98% of wall)
+    memory_unit avg/call    : 177.8 ns  (4.16% of wall)
+    compute_unit avg/call   : 156.7 ns  (0.46% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+
+---------------------------------------------------------------
+Trial 4 [clock]: Clock speed: min (1500000 kHz, performance-pinned)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 1500000 kHz
+  measured cpu0 governor   : userspace
+  --- processing validation ---
+    wall clock              : 0.0015 s  (4096 ticks)
+    io_unit avg/call        : 192.4 ns  (54.09% of wall)
+    memory_unit avg/call    : 232.0 ns  (4.08% of wall)
+    compute_unit avg/call   : 214.7 ns  (0.47% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+
+---------------------------------------------------------------
+Trial 5 [cores]: Core count: 4 active (all online)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 1900000 kHz
+  measured cpu0 governor   : ondemand
+  --- processing validation ---
+    wall clock              : 0.0011 s  (4096 ticks)
+    io_unit avg/call        : 153.3 ns  (55.17% of wall)
+    memory_unit avg/call    : 182.4 ns  (4.10% of wall)
+    compute_unit avg/call   : 161.3 ns  (0.45% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+
+---------------------------------------------------------------
+Trial 6 [cores]: Core count: 2 active (cores 2-3 offline)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 2300000 kHz
+  measured cpu0 governor   : ondemand
+  --- processing validation ---
+    wall clock              : 0.0009 s  (4096 ticks)
+    io_unit avg/call        : 127.2 ns  (54.95% of wall)
+    memory_unit avg/call    : 151.9 ns  (4.10% of wall)
+    compute_unit avg/call   : 140.0 ns  (0.47% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+
+---------------------------------------------------------------
+Trial 7 [cores]: Core count: 1 active (cores 1-3 offline)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 2400000 kHz
+  measured cpu0 governor   : ondemand
+  --- processing validation ---
+    wall clock              : 0.0009 s  (4096 ticks)
+    io_unit avg/call        : 122.8 ns  (55.08% of wall)
+    memory_unit avg/call    : 147.4 ns  (4.13% of wall)
+    compute_unit avg/call   : 145.7 ns  (0.51% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+
+---------------------------------------------------------------
+Trial 8 [governor]: Governor: performance (always max freq)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 2400000 kHz
+  measured cpu0 governor   : performance
+  --- processing validation ---
+    wall clock              : 0.0009 s  (4096 ticks)
+    io_unit avg/call        : 121.1 ns  (54.31% of wall)
+    memory_unit avg/call    : 147.8 ns  (4.14% of wall)
+    compute_unit avg/call   : 130.3 ns  (0.46% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+
+---------------------------------------------------------------
+Trial 9 [governor]: Governor: schedutil (default demand-based scaling)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 2400000 kHz
+  measured cpu0 governor   : schedutil
+  --- processing validation ---
+    wall clock              : 0.0023 s  (4096 ticks)
+    io_unit avg/call        : 122.5 ns  (21.40% of wall)
+    memory_unit avg/call    : 147.9 ns  (1.62% of wall)
+    compute_unit avg/call   : 136.7 ns  (0.19% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd samples        : 1 (over 0.23 s)
+    avg VDD_CORE power      : 0.9451 W
+    avg summed-rail power   : 2.3279 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
+    avg corrected est. power: 3.2536 W  (linear-calibrated, see docs/power_model_notes.md)
+    energy for this run     : 0.7362 J
+    energy per prediction   : 23.0060 mJ
+
+---------------------------------------------------------------
+Trial 10 [governor]: Governor: powersave (always min freq)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 1500000 kHz
+  measured cpu0 governor   : powersave
+  --- processing validation ---
+    wall clock              : 0.0014 s  (4096 ticks)
+    io_unit avg/call        : 193.6 ns  (55.12% of wall)
+    memory_unit avg/call    : 232.8 ns  (4.14% of wall)
+    compute_unit avg/call   : 209.0 ns  (0.46% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+
+=================================================================
+Done. 10 trials written to results.csv in the working directory.
+=================================================================
