@@ -6,20 +6,19 @@ kernel_scale:
 .LFB0:
 	.cfi_startproc
 	endbr64
-	movq	$64, -8(%rsp)
+	movl	$64, %r8d
 	testl	%esi, %esi
 	je	.L4
 	movq	%rdi, %rax
 	movl	%esi, %esi
-	leaq	(%rdi,%rsi,4), %rdi
+	leaq	(%rdi,%rsi,4), %rsi
 	movl	$0, %ecx
 .L3:
-	movq	-8(%rsp), %rsi
 	movl	(%rax), %edx
 	salq	$6, %rdx	# HAND-EDIT: multiply-by-64 -> shift-left-6
 	addq	%rdx, %rcx
 	addq	$4, %rax
-	cmpq	%rdi, %rax
+	cmpq	%rsi, %rax
 	jne	.L3
 .L1:
 	movq	%rcx, %rax

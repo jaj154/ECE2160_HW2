@@ -28,13 +28,17 @@ echo "# Assembly-level optimization experiment  (arch: $ARCH)"
 echo "############################################################"
 
 # ---- 1. force a real hardware multiply in the baseline kernel ----------
-# volatile factor prevents the compiler from strength-reducing to a shift,
-# so we have a genuine multiply to replace.
+# An inline-asm barrier makes the compiler treat the factor as an opaque
+# runtime value it cannot constant-fold into a shift. A plain `volatile`
+# is enough on x86 but the aarch64 optimizer sees through it and emits a
+# shift anyway; the barrier forces a genuine `mul` (aarch64) / `imul`
+# (x86) on both.
 cat > /tmp/kernel_mul.c << 'EOF'
 #include "asm_kernel.h"
 uint64_t kernel_scale(const uint32_t *samples, uint32_t n)
 {
-    volatile uint64_t factor = 64u;
+    uint64_t factor = 64u;
+    __asm__ volatile("" : "+r"(factor));   /* opaque: prevents strength reduction */
     uint64_t acc = 0;
     for (uint32_t i = 0; i < n; i++)
         acc += (uint64_t)samples[i] * factor;
@@ -58,16 +62,36 @@ fi
 echo ">>> Step 3: substituting the multiply with a shift (2^6 = 64)"
 cp kernel_mul.s kernel_shift.s
 if [[ "$ARCH" == aarch64* || "$ARCH" == arm* ]]; then
-    # aarch64: `mul Xd, Xa, Xb` (factor in one reg) -> `lsl Xd, Xa, #6`.
-    # Replace the first mul that targets the accumulator multiply. We
-    # rewrite `mul <d>, <a>, <b>` -> `lsl <d>, <a>, #6` using the first
-    # two operands and discarding the register that held 64.
+    # aarch64: `mul Xd, Xa, Xb` -> `lsl Xd, X?, #6`, where X? is whichever
+    # of Xa/Xb is NOT the factor register. The factor (64) is loaded with a
+    # `mov X?, #64` (or w-reg) shortly before the mul; we find that register
+    # so we shift the SAMPLE operand, not the constant. If we cannot
+    # identify it, we fall back to assuming the factor is the last operand
+    # (the common layout) and rely on the Step-6 checksum guard to catch a
+    # wrong guess.
     line=$(grep -nE '\bmul\b' kernel_shift.s | head -1 | cut -d: -f1)
     orig=$(sed -n "${line}p" kernel_shift.s)
-    # extract "mul  Xd, Xa, Xb"
     d=$(echo "$orig" | sed -E 's/.*mul[[:space:]]+([xw][0-9]+),[[:space:]]*([xw][0-9]+),[[:space:]]*([xw][0-9]+).*/\1/')
     a=$(echo "$orig" | sed -E 's/.*mul[[:space:]]+([xw][0-9]+),[[:space:]]*([xw][0-9]+),[[:space:]]*([xw][0-9]+).*/\2/')
-    sed -i "${line}s|.*|\tlsl\t${d}, ${a}, #6\t// HAND-EDIT: multiply-by-64 -> shift-left-6|" kernel_shift.s
+    b=$(echo "$orig" | sed -E 's/.*mul[[:space:]]+([xw][0-9]+),[[:space:]]*([xw][0-9]+),[[:space:]]*([xw][0-9]+).*/\3/')
+
+    # Which of a/b holds the constant 64? Look backwards for `mov <reg>, #64`.
+    # Compare on the numeric register index so x3/w3 match.
+    aidx=$(echo "$a" | tr -dc '0-9')
+    bidx=$(echo "$b" | tr -dc '0-9')
+    factreg=$(awk -v L="$line" '
+        NR<L && /mov[[:space:]]+[xw][0-9]+,[[:space:]]*#64\b/ {
+            match($0,/[xw][0-9]+/); r=substr($0,RSTART,RLENGTH); gsub(/[xw]/,"",r); last=r
+        } END{print last}' kernel_shift.s)
+
+    if [[ "$factreg" == "$bidx" ]]; then
+        sample="$a"    # factor is b, so shift a
+    elif [[ "$factreg" == "$aidx" ]]; then
+        sample="$b"    # factor is a, so shift b
+    else
+        sample="$a"    # unknown: assume factor is last operand (b); guard will verify
+    fi
+    sed -i "${line}s|.*|\tlsl\t${d}, ${sample}, #6\t// HAND-EDIT: multiply-by-64 -> shift-left-6|" kernel_shift.s
 else
     # x86-64: `imulq %rsi, %rdx` -> `salq $6, %rdx`
     sed -i -E 's/\timulq\t(%[a-z0-9]+), (%[a-z0-9]+)/\tsalq\t$6, \2\t# HAND-EDIT: multiply-by-64 -> shift-left-6/' kernel_shift.s
@@ -91,6 +115,24 @@ echo ">>> Step 5: measuring MULTIPLY variant"
 echo ""
 echo ">>> Step 5: measuring SHIFT variant"
 ./bin/asm_shift
+
+# ---- 6. correctness guard ----------------------------------------------
+# The shift is only a valid substitution if it computes the SAME result as
+# the multiply. On aarch64 the register the barrier introduces can land in
+# either mul operand, so a naive edit could shift the wrong register. We
+# verify the two variants' checksums match before trusting any timing/power
+# comparison; if they differ, the hand-edit was wrong and the run is void.
+echo ""
+echo ">>> Step 6: verifying correctness (checksums must match)"
+cm=$(grep -E '^multiply,' asm_results.csv | cut -d, -f2)
+cs=$(grep -E '^shift,'    asm_results.csv | cut -d, -f2)
+if [[ -n "$cm" && -n "$cs" && "$cm" == "$cs" ]]; then
+    echo "    OK: checksums match ($cm) -- shift is a valid substitution."
+else
+    echo "    ERROR: checksum mismatch (multiply=$cm shift=$cs)."
+    echo "    The assembly edit shifted the wrong operand. Paste kernel_shift.s"
+    echo "    (the 'lsl' line) back and it can be corrected by hand."
+fi
 
 echo ""
 echo ">>> Combined results in asm_results.csv:"
