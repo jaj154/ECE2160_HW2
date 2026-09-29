@@ -25,6 +25,9 @@
 #include <time.h>
 
 #include "asm_kernel.h"
+
+/* pick the kernel variant at compile time from the label */
+static uint64_t run_kernel(const uint32_t *s, uint32_t n);
 #include "power_monitor.h"
 
 #define N_SAMPLES        4096u
@@ -37,6 +40,16 @@
 #ifndef VARIANT_LABEL
 #define VARIANT_LABEL "unspecified"
 #endif
+
+
+static uint64_t run_kernel(const uint32_t *s, uint32_t n)
+{
+#if defined(VARIANT_IS_SHIFT)
+    return kernel_scale_shift(s, n);
+#else
+    return kernel_scale_mul(s, n);
+#endif
+}
 
 typedef struct { int n; double sum, sum_sq; } acc_t;
 static void   add(acc_t *a, double x){ a->n++; a->sum+=x; a->sum_sq+=x*x; }
@@ -67,7 +80,7 @@ int main(void)
     for (int rep=0; rep<REPEATS; rep++) {
         /* calibrate: time one kernel call */
         double c0 = now_s();
-        checksum = kernel_scale(samples, N_SAMPLES);
+        checksum = run_kernel(samples, N_SAMPLES);
         double c1 = now_s();
         double one = c1 - c0;
         if (one < 1e-9) one = 1e-9;
@@ -77,7 +90,7 @@ int main(void)
         power_monitor_t *pm = power_monitor_start(POWER_SAMPLE_MS);
         double t0 = now_s();
         volatile uint64_t sink = 0;
-        for (uint64_t k=0;k<iters;k++) sink += kernel_scale(samples, N_SAMPLES);
+        for (uint64_t k=0;k<iters;k++) sink += run_kernel(samples, N_SAMPLES);
         double t1 = now_s();
         power_summary_t s; power_monitor_stop(pm, &s);
         (void)sink;
