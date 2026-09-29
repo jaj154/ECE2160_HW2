@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "power_monitor.h"
+#include "pmic_read.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,16 +16,6 @@
  * for your specific board and note it in the paper. */
 #define RPI5_POWER_CAL_SLOPE     1.1451
 #define RPI5_POWER_CAL_INTERCEPT 0.5879
-
-#define MAX_RAILS 24
-
-typedef struct {
-    char   base[24];
-    double volt;
-    double curr;
-    int    have_volt;
-    int    have_curr;
-} rail_t;
 
 struct power_monitor {
     pthread_t       thread;
@@ -58,77 +49,12 @@ static long read_cpu0_freq_khz(void)
     return khz;
 }
 
-static void strip_suffix(char *name, const char *suffix)
-{
-    size_t nlen = strlen(name), slen = strlen(suffix);
-    if (nlen > slen && strcmp(name + nlen - slen, suffix) == 0) {
-        name[nlen - slen] = '\0';
-    }
-}
-
-static rail_t *find_or_add_rail(rail_t *rails, int *count, const char *base)
-{
-    for (int i = 0; i < *count; i++) {
-        if (strcmp(rails[i].base, base) == 0) return &rails[i];
-    }
-    if (*count >= MAX_RAILS) return NULL;
-    rail_t *r = &rails[*count];
-    memset(r, 0, sizeof(*r));
-    strncpy(r->base, base, sizeof(r->base) - 1);
-    (*count)++;
-    return r;
-}
-
-/* Parses one full `vcgencmd pmic_read_adc` invocation. Returns 0 on
- * success (command ran and produced at least one parsable line), -1
- * if the command couldn't be run at all (no vcgencmd on this system). */
+/* Sampling now delegates to the pmic_read backend (fast hwmon direct
+ * reads where available, vcgencmd fallback otherwise), initialized once
+ * by power_monitor_start via pmic_init(). */
 static int sample_once(double *out_core_power, double *out_total_power)
 {
-    FILE *fp = popen("vcgencmd pmic_read_adc 2>/dev/null", "r");
-    if (!fp) return -1;
-
-    rail_t rails[MAX_RAILS];
-    int rail_count = 0;
-    char line[128];
-    int any_line = 0;
-
-    while (fgets(line, sizeof(line), fp)) {
-        char name[32], rest[64];
-        if (sscanf(line, "%31s %63s", name, rest) != 2) continue;
-        char *eq = strchr(rest, '=');
-        if (!eq) continue;
-        double val = atof(eq + 1);
-
-        int is_current = (strstr(name, "_A") == name + strlen(name) - 2);
-        int is_volt    = (strstr(name, "_V") == name + strlen(name) - 2);
-        if (!is_current && !is_volt) continue;
-
-        char base[32];
-        strncpy(base, name, sizeof(base) - 1);
-        base[sizeof(base) - 1] = '\0';
-        strip_suffix(base, is_current ? "_A" : "_V");
-
-        rail_t *r = find_or_add_rail(rails, &rail_count, base);
-        if (!r) continue;
-        if (is_current) { r->curr = val; r->have_curr = 1; }
-        else            { r->volt = val; r->have_volt = 1; }
-        any_line = 1;
-    }
-    int status = pclose(fp);
-
-    if (!any_line || status != 0) return -1;
-
-    double total = 0.0, core = 0.0;
-    for (int i = 0; i < rail_count; i++) {
-        if (rails[i].have_volt && rails[i].have_curr) {
-            double p = rails[i].volt * rails[i].curr;
-            total += p;
-            if (strcmp(rails[i].base, "VDD_CORE") == 0) core = p;
-        }
-    }
-    *out_core_power = core;
-    *out_total_power = total;
-    return 0;
+    return pmic_sample(out_core_power, out_total_power);
 }
 
 static void *monitor_thread_fn(void *arg)
@@ -174,6 +100,8 @@ power_monitor_t *power_monitor_start(long interval_ms)
 {
     power_monitor_t *pm = calloc(1, sizeof(power_monitor_t));
     if (!pm) return NULL;
+
+    pmic_init();   /* select fast hwmon path or vcgencmd fallback (idempotent) */
 
     pm->interval_ms = (interval_ms > 0) ? interval_ms : 200;
     pm->running = 1;

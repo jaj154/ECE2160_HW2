@@ -57,8 +57,41 @@ present it will report real numbers.
 ./bin/critter_main          # original single-run pipeline report
 sudo ./bin/run_experiments  # the config-sweep power suite (clock/cores/governor)
 ./bin/analyze_embedded      # embedded power aspects (idle, duty-cycle, static/dynamic)
-sudo ./scripts/peripheral_states.sh   # runs analyze_embedded per GUI/BT state
+./bin/analyze_stages        # NEW: per-stage DIRECT power isolation (io/memory/compute)
+sudo ./scripts/peripheral_states.sh    # runs analyze_embedded per GUI/BT state
+sudo ./scripts/run_asm_experiment.sh   # NEW: assembly multiply-vs-shift, measured
 ```
+
+### Fast PMIC backend (pmic_read.c)
+
+Power sampling now goes through `pmic_read`, which probes for the Pi 5
+PMIC rails in the kernel hwmon sysfs tree and reads them directly in C
+(open/read/close, no subprocess). This removes the ~100 ms per-sample
+cost of forking `vcgencmd`, allowing millisecond-scale polling and much
+tighter error bars. If the hwmon rails are not exposed on your firmware,
+it automatically falls back to the original `vcgencmd` parse, so results
+remain valid either way. Each harness prints which backend it selected
+(`hwmon-direct` or `vcgencmd`); note it in the paper, since the sampling
+rate differs between them.
+
+### bin/analyze_stages — per-stage power isolation
+
+Drives each of the three prototype units in isolation under sustained
+load and measures the power drawn while only that stage runs, then
+subtracts the idle floor to isolate each stage's dynamic power. This
+produces a DIRECT measured decomposition of dynamic power across the
+three units, replacing the time-share-as-energy-share assumption with
+data. Writes `stage_results.csv`. No root required.
+
+### scripts/run_asm_experiment.sh — assembly optimization, measured
+
+Compiles the integer scaling kernel with `gcc -S`, locates the hardware
+multiply, hand-edits it into a shift (arch-aware: `imul`→`sal` on x86,
+`mul`→`lsl` on the Pi's aarch64), builds both variants, and measures
+each under the PMIC monitor. Confirms identical checksums (correctness
+preserved) and writes `asm_results.csv` with a multiply-vs-shift energy
+comparison. This is the direct experimental evaluation of assignment
+Option 2.
 
 ### bin/analyze_embedded — embedded power aspects
 
