@@ -10,9 +10,9 @@ Trial 1 [baseline]: Baseline (system default config, unmodified)
   measured cpu0 governor   : ondemand
   --- processing validation ---
     wall clock              : 0.0009 s  (4096 ticks)
-    io_unit avg/call        : 123.9 ns  (55.27% of wall)
-    memory_unit avg/call    : 146.6 ns  (4.09% of wall)
-    compute_unit avg/call   : 141.3 ns  (0.49% of wall)
+    io_unit avg/call        : 123.9 ns  (55.73% of wall)
+    memory_unit avg/call    : 144.4 ns  (4.06% of wall)
+    compute_unit avg/call   : 142.9 ns  (0.50% of wall)
     samples in/kept/rej%    : 4096 / 4066 / 0.73%
     summaries/predictions   : 256 / 32
     last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
@@ -26,20 +26,16 @@ Trial 2 [clock]: Clock speed: max (2400000 kHz, performance-pinned)
   measured cpu0 frequency  : 2400000 kHz
   measured cpu0 governor   : userspace
   --- processing validation ---
-    wall clock              : 0.0034 s  (4096 ticks)
-    io_unit avg/call        : 554.6 ns  (66.58% of wall)
-    memory_unit avg/call    : 179.8 ns  (1.35% of wall)
-    compute_unit avg/call   : 148.8 ns  (0.14% of wall)
+    wall clock              : 0.0009 s  (4096 ticks)
+    io_unit avg/call        : 121.1 ns  (54.67% of wall)
+    memory_unit avg/call    : 145.6 ns  (4.11% of wall)
+    compute_unit avg/call   : 128.6 ns  (0.45% of wall)
     samples in/kept/rej%    : 4096 / 4066 / 0.73%
     summaries/predictions   : 256 / 32
     last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
   --- power ---
-    vcgencmd samples        : 1 (over 0.23 s)
-    avg VDD_CORE power      : 1.5908 W
-    avg summed-rail power   : 2.8680 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.8721 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy for this run     : 0.8714 J
-    energy per prediction   : 27.2314 mJ
+    vcgencmd not available on this system -- power fields are N/A.
+    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
 
 ---------------------------------------------------------------
 Trial 3 [clock]: Clock speed: mid (1950000 kHz, performance-pinned)
@@ -48,9 +44,9 @@ Trial 3 [clock]: Clock speed: mid (1950000 kHz, performance-pinned)
   measured cpu0 governor   : userspace
   --- processing validation ---
     wall clock              : 0.0011 s  (4096 ticks)
-    io_unit avg/call        : 145.3 ns  (55.08% of wall)
-    memory_unit avg/call    : 175.6 ns  (4.16% of wall)
-    compute_unit avg/call   : 164.3 ns  (0.49% of wall)
+    io_unit avg/call        : 144.4 ns  (55.04% of wall)
+    memory_unit avg/call    : 174.4 ns  (4.15% of wall)
+    compute_unit avg/call   : 149.2 ns  (0.44% of wall)
     samples in/kept/rej%    : 4096 / 4066 / 0.73%
     summaries/predictions   : 256 / 32
     last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
@@ -64,27 +60,31 @@ Trial 4 [clock]: Clock speed: min (1500000 kHz, performance-pinned)
   measured cpu0 frequency  : 1500000 kHz
   measured cpu0 governor   : userspace
   --- processing validation ---
-    wall clock              : 0.0014 s  (4096 ticks)
-    io_unit avg/call        : 192.5 ns  (54.94% of wall)
-    memory_unit avg/call    : 231.2 ns  (4.13% of wall)
-    compute_unit avg/call   : 217.1 ns  (0.48% of wall)
+    wall clock              : 0.0024 s  (4096 ticks)
+    io_unit avg/call        : 420.9 ns  (72.71% of wall)
+    memory_unit avg/call    : 230.3 ns  (2.49% of wall)
+    compute_unit avg/call   : 202.6 ns  (0.27% of wall)
     samples in/kept/rej%    : 4096 / 4066 / 0.73%
     summaries/predictions   : 256 / 32
     last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
   --- power ---
-    vcgencmd not available on this system -- power fields are N/A.
-    (expected on non-Pi hardware; run on the Pi 5 for real numbers)
+    vcgencmd samples        : 1 (over 0.23 s)
+    avg VDD_CORE power      : 0.4753 W
+    avg summed-rail power   : 1.7185 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
+    avg corrected est. power: 2.5557 W  (linear-calibrated, see docs/power_model_notes.md)
+    energy for this run     : 0.5787 J
+    energy per prediction   : 18.0846 mJ
 
 ---------------------------------------------------------------
 Trial 5 [cores]: Core count: 4 active (all online)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 1600000 kHz
+  measured cpu0 frequency  : 1500000 kHz
   measured cpu0 governor   : ondemand
   --- processing validation ---
-    wall clock              : 0.0013 s  (4096 ticks)
-    io_unit avg/call        : 181.1 ns  (55.08% of wall)
-    memory_unit avg/call    : 216.8 ns  (4.12% of wall)
-    compute_unit avg/call   : 193.3 ns  (0.46% of wall)
+    wall clock              : 0.0014 s  (4096 ticks)
+    io_unit avg/call        : 190.9 ns  (54.82% of wall)
+    memory_unit avg/call    : 231.7 ns  (4.16% of wall)
+    compute_unit avg/call   : 225.1 ns  (0.50% of wall)
     samples in/kept/rej%    : 4096 / 4066 / 0.73%
     summaries/predictions   : 256 / 32
     last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
@@ -95,34 +95,13 @@ Trial 5 [cores]: Core count: 4 active (all online)
 ---------------------------------------------------------------
 Trial 6 [cores]: Core count: 2 active (cores 2-3 offline)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 1900000 kHz
-  measured cpu0 governor   : ondemand
-  --- processing validation ---
-    wall clock              : 0.0025 s  (4096 ticks)
-    io_unit avg/call        : 154.8 ns  (25.36% of wall)
-    memory_unit avg/call    : 184.9 ns  (1.89% of wall)
-    compute_unit avg/call   : 186.4 ns  (0.24% of wall)
-    samples in/kept/rej%    : 4096 / 4066 / 0.73%
-    summaries/predictions   : 256 / 32
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 1 (over 0.23 s)
-    avg VDD_CORE power      : 1.3580 W
-    avg summed-rail power   : 2.7669 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.7563 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy for this run     : 0.8606 J
-    energy per prediction   : 26.8935 mJ
-
----------------------------------------------------------------
-Trial 7 [cores]: Core count: 1 active (cores 1-3 offline)
-  requested change applied : YES (confirmed on hardware)
   measured cpu0 frequency  : 1500000 kHz
   measured cpu0 governor   : ondemand
   --- processing validation ---
     wall clock              : 0.0014 s  (4096 ticks)
-    io_unit avg/call        : 193.7 ns  (55.07% of wall)
-    memory_unit avg/call    : 232.6 ns  (4.13% of wall)
-    compute_unit avg/call   : 221.1 ns  (0.49% of wall)
+    io_unit avg/call        : 189.1 ns  (54.74% of wall)
+    memory_unit avg/call    : 230.6 ns  (4.17% of wall)
+    compute_unit avg/call   : 211.9 ns  (0.48% of wall)
     samples in/kept/rej%    : 4096 / 4066 / 0.73%
     summaries/predictions   : 256 / 32
     last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
@@ -131,15 +110,36 @@ Trial 7 [cores]: Core count: 1 active (cores 1-3 offline)
     (expected on non-Pi hardware; run on the Pi 5 for real numbers)
 
 ---------------------------------------------------------------
+Trial 7 [cores]: Core count: 1 active (cores 1-3 offline)
+  requested change applied : YES (confirmed on hardware)
+  measured cpu0 frequency  : 1900000 kHz
+  measured cpu0 governor   : ondemand
+  --- processing validation ---
+    wall clock              : 0.0019 s  (4096 ticks)
+    io_unit avg/call        : 151.2 ns  (33.32% of wall)
+    memory_unit avg/call    : 181.9 ns  (2.51% of wall)
+    compute_unit avg/call   : 160.2 ns  (0.28% of wall)
+    samples in/kept/rej%    : 4096 / 4066 / 0.73%
+    summaries/predictions   : 256 / 32
+    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
+  --- power ---
+    vcgencmd samples        : 1 (over 0.23 s)
+    avg VDD_CORE power      : 0.8707 W
+    avg summed-rail power   : 2.1165 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
+    avg corrected est. power: 3.0115 W  (linear-calibrated, see docs/power_model_notes.md)
+    energy for this run     : 0.6806 J
+    energy per prediction   : 21.2700 mJ
+
+---------------------------------------------------------------
 Trial 8 [governor]: Governor: performance (always max freq)
   requested change applied : YES (confirmed on hardware)
   measured cpu0 frequency  : 2400000 kHz
   measured cpu0 governor   : performance
   --- processing validation ---
     wall clock              : 0.0009 s  (4096 ticks)
-    io_unit avg/call        : 121.3 ns  (55.09% of wall)
-    memory_unit avg/call    : 144.8 ns  (4.11% of wall)
-    compute_unit avg/call   : 136.1 ns  (0.48% of wall)
+    io_unit avg/call        : 119.6 ns  (54.70% of wall)
+    memory_unit avg/call    : 147.1 ns  (4.21% of wall)
+    compute_unit avg/call   : 133.1 ns  (0.48% of wall)
     samples in/kept/rej%    : 4096 / 4066 / 0.73%
     summaries/predictions   : 256 / 32
     last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
@@ -154,19 +154,19 @@ Trial 9 [governor]: Governor: schedutil (default demand-based scaling)
   measured cpu0 governor   : schedutil
   --- processing validation ---
     wall clock              : 0.0009 s  (4096 ticks)
-    io_unit avg/call        : 126.2 ns  (55.03% of wall)
-    memory_unit avg/call    : 150.3 ns  (4.10% of wall)
-    compute_unit avg/call   : 134.9 ns  (0.46% of wall)
+    io_unit avg/call        : 124.5 ns  (54.90% of wall)
+    memory_unit avg/call    : 150.8 ns  (4.15% of wall)
+    compute_unit avg/call   : 132.4 ns  (0.46% of wall)
     samples in/kept/rej%    : 4096 / 4066 / 0.73%
     summaries/predictions   : 256 / 32
     last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
   --- power ---
     vcgencmd samples        : 1 (over 0.23 s)
-    avg VDD_CORE power      : 0.7555 W
-    avg summed-rail power   : 2.0147 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 2.8949 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy for this run     : 0.6556 J
-    energy per prediction   : 20.4861 mJ
+    avg VDD_CORE power      : 0.8084 W
+    avg summed-rail power   : 2.1018 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
+    avg corrected est. power: 2.9947 W  (linear-calibrated, see docs/power_model_notes.md)
+    energy for this run     : 0.6776 J
+    energy per prediction   : 21.1739 mJ
 
 ---------------------------------------------------------------
 Trial 10 [governor]: Governor: powersave (always min freq)
@@ -175,9 +175,9 @@ Trial 10 [governor]: Governor: powersave (always min freq)
   measured cpu0 governor   : powersave
   --- processing validation ---
     wall clock              : 0.0014 s  (4096 ticks)
-    io_unit avg/call        : 192.3 ns  (54.85% of wall)
-    memory_unit avg/call    : 231.8 ns  (4.13% of wall)
-    compute_unit avg/call   : 218.2 ns  (0.49% of wall)
+    io_unit avg/call        : 192.6 ns  (54.48% of wall)
+    memory_unit avg/call    : 233.3 ns  (4.12% of wall)
+    compute_unit avg/call   : 221.7 ns  (0.49% of wall)
     samples in/kept/rej%    : 4096 / 4066 / 0.73%
     summaries/predictions   : 256 / 32
     last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
