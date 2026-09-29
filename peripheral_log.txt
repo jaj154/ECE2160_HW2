@@ -1,0 +1,197 @@
+>>> Baseline: whatever the system is at now (labelled as-found)
+
+############################################################
+# PERIPHERAL STATE: as-found_gui=1_bt=1
+############################################################
+=== Critter Embedded Power Analysis ===
+Peripheral state: as-found_gui=1_bt=1
+Idle window 5.0s, active window 4.0s, 5 repeats each.
+Network left UP; idle = process blocked (not busy-looping).
+One pipeline pass = 4096 ticks = 32 predictions.
+
+--- Measuring IDLE (blocked, network up) x5 ---
+  repeat 1: total=2.5841 W (core=0.4841 W, 29 samples)
+  repeat 2: total=2.5393 W (core=0.4590 W, 29 samples)
+  repeat 3: total=2.5696 W (core=0.4667 W, 29 samples)
+  repeat 4: total=2.5709 W (core=0.4754 W, 29 samples)
+  repeat 5: total=2.5880 W (core=0.4754 W, 29 samples)
+
+--- Measuring ACTIVE (sustained pipeline) x5 ---
+  repeat 1: total=3.9032 W (core=1.6321 W), 0.000909 s/call, 23 samples
+  repeat 2: total=3.9249 W (core=1.6498 W), 0.000908 s/call, 23 samples
+  repeat 3: total=4.0035 W (core=1.7032 W), 0.000907 s/call, 23 samples
+  repeat 4: total=3.9597 W (core=1.6651 W), 0.000909 s/call, 23 samples
+  repeat 5: total=3.9992 W (core=1.7099 W), 0.000907 s/call, 23 samples
+
+=================== EMBEDDED POWER SUMMARY ===================
+Peripheral state: as-found_gui=1_bt=1
+Idle  (platform floor)  : 2.5704 +/- 0.0171 W  (core 0.4721 W)
+Active(sustained load)  : 3.9581 +/- 0.0397 W  (core 1.6720 W)
+  -> STATIC  (derived)  : 2.5704 W  (~= idle floor)
+  -> DYNAMIC (derived)  : 1.3877 W  (active - idle; switching)
+  -> dynamic is 35.1% of active draw; static floor is 64.9%
+Time per pipeline pass  : 0.000908 s  (32 predictions)
+Active energy per pass  : 0.0036 J  (0.1123 mJ/prediction)
+
+--- DUTY-CYCLED DEPLOYMENT MODEL ---
+(one 4k-tick pass per sample period; idle the rest)
+  duty       period(s)    avg_power(W)   energy/period(J)
+  1.000      0.0009       3.9581         0.0036          
+  0.500      0.0018       3.2642         0.0059          
+  0.100      0.0091       2.7091         0.0246          
+  0.010      0.0908       2.5842         0.2346          
+  0.001      0.9078       2.5717         2.3346          
+As duty -> 0, avg power -> idle floor (2.5704 W): idle DOMINATES
+the budget, so idle power matters more than any active-config knob.
+
+Wrote embedded_results.csv
+=============================================================
+>>> GUI off, Bluetooth on
+
+############################################################
+# PERIPHERAL STATE: gui-off_bt-on
+############################################################
+=== Critter Embedded Power Analysis ===
+Peripheral state: gui-off_bt-on
+Idle window 5.0s, active window 4.0s, 5 repeats each.
+Network left UP; idle = process blocked (not busy-looping).
+One pipeline pass = 4096 ticks = 32 predictions.
+
+--- Measuring IDLE (blocked, network up) x5 ---
+  repeat 1: total=2.5874 W (core=0.4828 W, 29 samples)
+  repeat 2: total=2.6130 W (core=0.4948 W, 29 samples)
+  repeat 3: total=2.5747 W (core=0.4700 W, 29 samples)
+  repeat 4: total=2.5645 W (core=0.4759 W, 29 samples)
+  repeat 5: total=2.5761 W (core=0.4748 W, 29 samples)
+
+--- Measuring ACTIVE (sustained pipeline) x5 ---
+  repeat 1: total=3.9214 W (core=1.6358 W), 0.000908 s/call, 23 samples
+  repeat 2: total=3.9715 W (core=1.6853 W), 0.000908 s/call, 23 samples
+  repeat 3: total=3.9710 W (core=1.6898 W), 0.000906 s/call, 23 samples
+  repeat 4: total=3.9707 W (core=1.6904 W), 0.000901 s/call, 23 samples
+  repeat 5: total=3.9757 W (core=1.6783 W), 0.000906 s/call, 23 samples
+
+=================== EMBEDDED POWER SUMMARY ===================
+Peripheral state: gui-off_bt-on
+Idle  (platform floor)  : 2.5831 +/- 0.0166 W  (core 0.4797 W)
+Active(sustained load)  : 3.9621 +/- 0.0204 W  (core 1.6759 W)
+  -> STATIC  (derived)  : 2.5831 W  (~= idle floor)
+  -> DYNAMIC (derived)  : 1.3789 W  (active - idle; switching)
+  -> dynamic is 34.8% of active draw; static floor is 65.2%
+Time per pipeline pass  : 0.000906 s  (32 predictions)
+Active energy per pass  : 0.0036 J  (0.1121 mJ/prediction)
+
+--- DUTY-CYCLED DEPLOYMENT MODEL ---
+(one 4k-tick pass per sample period; idle the rest)
+  duty       period(s)    avg_power(W)   energy/period(J)
+  1.000      0.0009       3.9621         0.0036          
+  0.500      0.0018       3.2726         0.0059          
+  0.100      0.0091       2.7210         0.0246          
+  0.010      0.0906       2.5969         0.2352          
+  0.001      0.9056       2.5845         2.3407          
+As duty -> 0, avg power -> idle floor (2.5831 W): idle DOMINATES
+the budget, so idle power matters more than any active-config knob.
+
+Wrote embedded_results.csv
+=============================================================
+>>> GUI off, Bluetooth off
+
+############################################################
+# PERIPHERAL STATE: gui-off_bt-off
+############################################################
+=== Critter Embedded Power Analysis ===
+Peripheral state: gui-off_bt-off
+Idle window 5.0s, active window 4.0s, 5 repeats each.
+Network left UP; idle = process blocked (not busy-looping).
+One pipeline pass = 4096 ticks = 32 predictions.
+
+--- Measuring IDLE (blocked, network up) x5 ---
+  repeat 1: total=2.6074 W (core=0.5020 W, 29 samples)
+  repeat 2: total=2.6161 W (core=0.5048 W, 29 samples)
+  repeat 3: total=2.6095 W (core=0.5111 W, 29 samples)
+  repeat 4: total=2.6000 W (core=0.5004 W, 29 samples)
+  repeat 5: total=2.5679 W (core=0.4713 W, 29 samples)
+
+--- Measuring ACTIVE (sustained pipeline) x5 ---
+  repeat 1: total=3.9321 W (core=1.6469 W), 0.000908 s/call, 23 samples
+  repeat 2: total=3.9382 W (core=1.6605 W), 0.000903 s/call, 23 samples
+  repeat 3: total=3.9442 W (core=1.6683 W), 0.000907 s/call, 23 samples
+  repeat 4: total=3.9985 W (core=1.7170 W), 0.000905 s/call, 23 samples
+  repeat 5: total=3.9899 W (core=1.6875 W), 0.000908 s/call, 23 samples
+
+=================== EMBEDDED POWER SUMMARY ===================
+Peripheral state: gui-off_bt-off
+Idle  (platform floor)  : 2.6002 +/- 0.0170 W  (core 0.4979 W)
+Active(sustained load)  : 3.9606 +/- 0.0278 W  (core 1.6760 W)
+  -> STATIC  (derived)  : 2.6002 W  (~= idle floor)
+  -> DYNAMIC (derived)  : 1.3604 W  (active - idle; switching)
+  -> dynamic is 34.3% of active draw; static floor is 65.7%
+Time per pipeline pass  : 0.000906 s  (32 predictions)
+Active energy per pass  : 0.0036 J  (0.1121 mJ/prediction)
+
+--- DUTY-CYCLED DEPLOYMENT MODEL ---
+(one 4k-tick pass per sample period; idle the rest)
+  duty       period(s)    avg_power(W)   energy/period(J)
+  1.000      0.0009       3.9606         0.0036          
+  0.500      0.0018       3.2804         0.0059          
+  0.100      0.0091       2.7362         0.0248          
+  0.010      0.0906       2.6138         0.2368          
+  0.001      0.9061       2.6015         2.3571          
+As duty -> 0, avg power -> idle floor (2.6002 W): idle DOMINATES
+the budget, so idle power matters more than any active-config knob.
+
+Wrote embedded_results.csv
+=============================================================
+>>> GUI on, Bluetooth off
+
+############################################################
+# PERIPHERAL STATE: gui-on_bt-off
+############################################################
+=== Critter Embedded Power Analysis ===
+Peripheral state: gui-on_bt-off
+Idle window 5.0s, active window 4.0s, 5 repeats each.
+Network left UP; idle = process blocked (not busy-looping).
+One pipeline pass = 4096 ticks = 32 predictions.
+
+--- Measuring IDLE (blocked, network up) x5 ---
+  repeat 1: total=2.8223 W (core=0.6843 W, 29 samples)
+  repeat 2: total=2.6465 W (core=0.5350 W, 29 samples)
+  repeat 3: total=2.7068 W (core=0.5911 W, 29 samples)
+  repeat 4: total=2.6034 W (core=0.4880 W, 29 samples)
+  repeat 5: total=2.5843 W (core=0.4793 W, 29 samples)
+
+--- Measuring ACTIVE (sustained pipeline) x5 ---
+  repeat 1: total=3.9282 W (core=1.6496 W), 0.000921 s/call, 23 samples
+  repeat 2: total=4.0500 W (core=1.7127 W), 0.000922 s/call, 23 samples
+  repeat 3: total=4.0842 W (core=1.7061 W), 0.000920 s/call, 23 samples
+  repeat 4: total=3.9760 W (core=1.6892 W), 0.000919 s/call, 23 samples
+  repeat 5: total=3.9783 W (core=1.7033 W), 0.000918 s/call, 23 samples
+
+=================== EMBEDDED POWER SUMMARY ===================
+Peripheral state: gui-on_bt-off
+Idle  (platform floor)  : 2.6726 +/- 0.0858 W  (core 0.5555 W)
+Active(sustained load)  : 4.0034 +/- 0.0561 W  (core 1.6922 W)
+  -> STATIC  (derived)  : 2.6726 W  (~= idle floor)
+  -> DYNAMIC (derived)  : 1.3307 W  (active - idle; switching)
+  -> dynamic is 33.2% of active draw; static floor is 66.8%
+Time per pipeline pass  : 0.000920 s  (32 predictions)
+Active energy per pass  : 0.0037 J  (0.1151 mJ/prediction)
+
+--- DUTY-CYCLED DEPLOYMENT MODEL ---
+(one 4k-tick pass per sample period; idle the rest)
+  duty       period(s)    avg_power(W)   energy/period(J)
+  1.000      0.0009       4.0034         0.0037          
+  0.500      0.0018       3.3380         0.0061          
+  0.100      0.0092       2.8057         0.0258          
+  0.010      0.0920       2.6859         0.2471          
+  0.001      0.9199       2.6740         2.4599          
+As duty -> 0, avg power -> idle floor (2.6726 W): idle DOMINATES
+the budget, so idle power matters more than any active-config knob.
+
+Wrote embedded_results.csv
+=============================================================
+
+>>> All states measured. Combined table: embedded_results_all.csv
+>>> (trap will now restore your original GUI/Bluetooth state)
+>>> Restoring original peripheral states...
+>>> Done.
