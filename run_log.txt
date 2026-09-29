@@ -1,219 +1,169 @@
-=== Critter Power Experiment Harness (v2: sustained-load sampling) ===
-Workload: full pipeline (io_unit -> memory_unit -> compute_unit), 4096 ticks/call,
-looped for ~3.0 s per trial so the power monitor gets a real sample window.
-Identical synthetic sensor data on every call (fixed RNG seed).
+=== Critter Power Experiment Harness (v3: refined methodology) ===
+Workload: full pipeline (io->memory->compute), 4096 ticks/call, looped ~3.0 s
+per repeat, 5 repeats per config. Settle 400 ms + warm-up pass before timing.
+Frequency sampled DURING load. Identical synthetic data every call (fixed seed).
 Captured baseline config: cpu0 governor=ondemand, 4 cpu(s) present.
 
 ---------------------------------------------------------------
 Trial 1 [baseline]: Baseline (system default config, unmodified)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 2400000 kHz
-  measured cpu0 governor   : ondemand
-  --- processing validation ---
-    pipeline iterations run : 3268  (3.088 s total workload time, 0.000945 s/call avg)
-    io_unit avg/call        : 127.0 ns  (55.08% of workload time)
-    memory_unit avg/call    : 151.9 ns  (4.12% of workload time)
-    compute_unit avg/call   : 125.9 ns  (0.43% of workload time)
-    samples in/kept/rej%    : 13385728 / 13287688 / 0.73%
-    summaries/predictions   : 836608 / 104576  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 18 (over 3.15 s sampling window)
-    avg VDD_CORE power      : 1.6533 W
-    avg summed-rail power   : 2.9233 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.9354 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 12.3949 J
-    energy per prediction   : 0.1185 mJ  (across 104576 predictions)
+  governor (post-apply)    : ondemand
+  freq snapshot pre-load   : 1500000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 2329113 kHz avg  (range 1500000..2400000 kHz across load)
+    time per pipeline call  : 0.000939 +/- 0.000004 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 1.5787 +/- 0.0253 W
+    avg corrected est power : 3.8543 +/- 0.0354 W
+    energy per prediction   : 0.11786 +/- 0.00279 mJ
+    power samples/repeat    : 12.2
+    correctness vs baseline : MATCH (100%)
 
 ---------------------------------------------------------------
 Trial 2 [clock]: Clock speed: max (2400000 kHz, performance-pinned)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 2400000 kHz
-  measured cpu0 governor   : userspace
-  --- processing validation ---
-    pipeline iterations run : 3304  (3.065 s total workload time, 0.000928 s/call avg)
-    io_unit avg/call        : 124.5 ns  (54.98% of workload time)
-    memory_unit avg/call    : 145.5 ns  (4.02% of workload time)
-    compute_unit avg/call   : 130.2 ns  (0.45% of workload time)
-    samples in/kept/rej%    : 13533184 / 13434064 / 0.73%
-    summaries/predictions   : 845824 / 105728  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 18 (over 3.20 s sampling window)
-    avg VDD_CORE power      : 1.7203 W
-    avg summed-rail power   : 2.9946 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 4.0170 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 12.8344 J
-    energy per prediction   : 0.1214 mJ  (across 105728 predictions)
+  governor (post-apply)    : userspace
+  freq snapshot pre-load   : 2400000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 2400000 kHz avg  (range 2400000..2400000 kHz across load)
+    time per pipeline call  : 0.000930 +/- 0.000001 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 1.6858 +/- 0.0136 W
+    avg corrected est power : 3.9743 +/- 0.0211 W
+    energy per prediction   : 0.11944 +/- 0.00057 mJ
+    power samples/repeat    : 18.0
+    correctness vs baseline : MATCH (100%)
 
 ---------------------------------------------------------------
 Trial 3 [clock]: Clock speed: mid (1950000 kHz, performance-pinned)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 2000000 kHz
-  measured cpu0 governor   : userspace
-  --- processing validation ---
-    pipeline iterations run : 2782  (3.083 s total workload time, 0.001108 s/call avg)
-    io_unit avg/call        : 148.9 ns  (55.04% of workload time)
-    memory_unit avg/call    : 176.0 ns  (4.07% of workload time)
-    compute_unit avg/call   : 216.2 ns  (0.62% of workload time)
-    samples in/kept/rej%    : 11395072 / 11311612 / 0.73%
-    summaries/predictions   : 712192 / 89024  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 18 (over 3.15 s sampling window)
-    avg VDD_CORE power      : 1.2877 W
-    avg summed-rail power   : 2.5489 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.5067 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 11.0543 J
-    energy per prediction   : 0.1242 mJ  (across 89024 predictions)
+  governor (post-apply)    : userspace
+  freq snapshot pre-load   : 2000000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 2000000 kHz avg  (range 2000000..2000000 kHz across load)
+    time per pipeline call  : 0.001117 +/- 0.000002 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 1.3044 +/- 0.0162 W
+    avg corrected est power : 3.5483 +/- 0.0237 W
+    energy per prediction   : 0.12819 +/- 0.00173 mJ
+    power samples/repeat    : 18.0
+    correctness vs baseline : MATCH (100%)
 
 ---------------------------------------------------------------
 Trial 4 [clock]: Clock speed: min (1500000 kHz, performance-pinned)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 1500000 kHz
-  measured cpu0 governor   : userspace
-  --- processing validation ---
-    pipeline iterations run : 2087  (3.123 s total workload time, 0.001496 s/call avg)
-    io_unit avg/call        : 201.5 ns  (55.16% of workload time)
-    memory_unit avg/call    : 240.5 ns  (4.11% of workload time)
-    compute_unit avg/call   : 236.0 ns  (0.50% of workload time)
-    samples in/kept/rej%    : 8548352 / 8485742 / 0.73%
-    summaries/predictions   : 534272 / 66784  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 18 (over 3.23 s sampling window)
-    avg VDD_CORE power      : 0.8436 W
-    avg summed-rail power   : 2.0946 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 2.9864 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 9.6462 J
-    energy per prediction   : 0.1444 mJ  (across 66784 predictions)
+  governor (post-apply)    : userspace
+  freq snapshot pre-load   : 1500000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 1500000 kHz avg  (range 1500000..1500000 kHz across load)
+    time per pipeline call  : 0.001499 +/- 0.000002 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 0.8135 +/- 0.0184 W
+    avg corrected est power : 2.9675 +/- 0.0229 W
+    energy per prediction   : 0.14312 +/- 0.00288 mJ
+    power samples/repeat    : 18.2
+    correctness vs baseline : MATCH (100%)
 
 ---------------------------------------------------------------
 Trial 5 [cores]: Core count: 4 active (all online)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 1500000 kHz
-  measured cpu0 governor   : ondemand
-  --- processing validation ---
-    pipeline iterations run : 2082  (1.935 s total workload time, 0.000929 s/call avg)
-    io_unit avg/call        : 123.6 ns  (54.47% of workload time)
-    memory_unit avg/call    : 144.7 ns  (3.98% of workload time)
-    compute_unit avg/call   : 124.6 ns  (0.43% of workload time)
-    samples in/kept/rej%    : 8527872 / 8465412 / 0.73%
-    summaries/predictions   : 532992 / 66624  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 12 (over 2.10 s sampling window)
-    avg VDD_CORE power      : 1.6587 W
-    avg summed-rail power   : 2.9445 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.9597 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 8.3288 J
-    energy per prediction   : 0.1250 mJ  (across 66624 predictions)
+  governor (post-apply)    : ondemand
+  freq snapshot pre-load   : 1500000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 2352143 kHz avg  (range 1500000..2400000 kHz across load)
+    time per pipeline call  : 0.000934 +/- 0.000002 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 1.6448 +/- 0.0330 W
+    avg corrected est power : 3.9306 +/- 0.0348 W
+    energy per prediction   : 0.12017 +/- 0.00276 mJ
+    power samples/repeat    : 13.4
+    correctness vs baseline : MATCH (100%)
 
 ---------------------------------------------------------------
 Trial 6 [cores]: Core count: 2 active (cores 2-3 offline)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 1500000 kHz
-  measured cpu0 governor   : ondemand
-  --- processing validation ---
-    pipeline iterations run : 1117  (1.044 s total workload time, 0.000934 s/call avg)
-    io_unit avg/call        : 126.1 ns  (55.30% of workload time)
-    memory_unit avg/call    : 145.3 ns  (3.98% of workload time)
-    compute_unit avg/call   : 145.2 ns  (0.50% of workload time)
-    samples in/kept/rej%    : 4575232 / 4541722 / 0.73%
-    summaries/predictions   : 285952 / 35744  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 6 (over 1.05 s sampling window)
-    avg VDD_CORE power      : 1.5746 W
-    avg summed-rail power   : 2.8409 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.8411 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 4.0274 J
-    energy per prediction   : 0.1127 mJ  (across 35744 predictions)
+  governor (post-apply)    : ondemand
+  freq snapshot pre-load   : 1500000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 2340779 kHz avg  (range 1500000..2400000 kHz across load)
+    time per pipeline call  : 0.000936 +/- 0.000002 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 1.6297 +/- 0.0361 W
+    avg corrected est power : 3.9107 +/- 0.0375 W
+    energy per prediction   : 0.12069 +/- 0.00345 mJ
+    power samples/repeat    : 13.4
+    correctness vs baseline : MATCH (100%)
 
 ---------------------------------------------------------------
 Trial 7 [cores]: Core count: 1 active (cores 1-3 offline)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 2400000 kHz
-  measured cpu0 governor   : ondemand
-  --- processing validation ---
-    pipeline iterations run : 1878  (1.747 s total workload time, 0.000930 s/call avg)
-    io_unit avg/call        : 125.6 ns  (55.33% of workload time)
-    memory_unit avg/call    : 147.2 ns  (4.05% of workload time)
-    compute_unit avg/call   : 124.7 ns  (0.43% of workload time)
-    samples in/kept/rej%    : 7692288 / 7635948 / 0.73%
-    summaries/predictions   : 480768 / 60096  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 10 (over 1.76 s sampling window)
-    avg VDD_CORE power      : 1.6611 W
-    avg summed-rail power   : 2.9519 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.9681 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 6.9707 J
-    energy per prediction   : 0.1160 mJ  (across 60096 predictions)
+  governor (post-apply)    : ondemand
+  freq snapshot pre-load   : 1500000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 2346177 kHz avg  (range 1500000..2400000 kHz across load)
+    time per pipeline call  : 0.000935 +/- 0.000002 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 1.6530 +/- 0.0290 W
+    avg corrected est power : 3.9521 +/- 0.0346 W
+    energy per prediction   : 0.11854 +/- 0.00302 mJ
+    power samples/repeat    : 12.8
+    correctness vs baseline : MATCH (100%)
 
 ---------------------------------------------------------------
 Trial 8 [governor]: Governor: performance (always max freq)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 2400000 kHz
-  measured cpu0 governor   : performance
-  --- processing validation ---
-    pipeline iterations run : 3316  (3.073 s total workload time, 0.000927 s/call avg)
-    io_unit avg/call        : 123.9 ns  (54.74% of workload time)
-    memory_unit avg/call    : 154.3 ns  (4.26% of workload time)
-    compute_unit avg/call   : 124.3 ns  (0.43% of workload time)
-    samples in/kept/rej%    : 13582336 / 13482856 / 0.73%
-    summaries/predictions   : 848896 / 106112  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 18 (over 3.14 s sampling window)
-    avg VDD_CORE power      : 1.7029 W
-    avg summed-rail power   : 2.9726 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.9919 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 12.5512 J
-    energy per prediction   : 0.1183 mJ  (across 106112 predictions)
+  governor (post-apply)    : performance
+  freq snapshot pre-load   : 2400000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 2400000 kHz avg  (range 2400000..2400000 kHz across load)
+    time per pipeline call  : 0.000931 +/- 0.000001 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 1.7167 +/- 0.0066 W
+    avg corrected est power : 4.0180 +/- 0.0155 W
+    energy per prediction   : 0.12119 +/- 0.00255 mJ
+    power samples/repeat    : 18.0
+    correctness vs baseline : MATCH (100%)
 
 ---------------------------------------------------------------
 Trial 9 [governor]: Governor: schedutil (default demand-based scaling)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 1500000 kHz
-  measured cpu0 governor   : schedutil
-  --- processing validation ---
-    pipeline iterations run : 2200  (2.043 s total workload time, 0.000929 s/call avg)
-    io_unit avg/call        : 124.7 ns  (54.98% of workload time)
-    memory_unit avg/call    : 156.0 ns  (4.30% of workload time)
-    compute_unit avg/call   : 124.9 ns  (0.43% of workload time)
-    samples in/kept/rej%    : 9011200 / 8945200 / 0.73%
-    summaries/predictions   : 563200 / 70400  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 12 (over 2.10 s sampling window)
-    avg VDD_CORE power      : 1.6783 W
-    avg summed-rail power   : 2.9337 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.9472 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 8.2779 J
-    energy per prediction   : 0.1176 mJ  (across 70400 predictions)
+  governor (post-apply)    : schedutil
+  freq snapshot pre-load   : 2400000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 2388333 kHz avg  (range 1700000..2400000 kHz across load)
+    time per pipeline call  : 0.000930 +/- 0.000003 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 1.7178 +/- 0.0170 W
+    avg corrected est power : 4.0044 +/- 0.0163 W
+    energy per prediction   : 0.12285 +/- 0.00232 mJ
+    power samples/repeat    : 12.0
+    correctness vs baseline : MATCH (100%)
 
 ---------------------------------------------------------------
 Trial 10 [governor]: Governor: powersave (always min freq)
   requested change applied : YES (confirmed on hardware)
-  measured cpu0 frequency  : 1500000 kHz
-  measured cpu0 governor   : powersave
-  --- processing validation ---
-    pipeline iterations run : 2070  (3.076 s total workload time, 0.001486 s/call avg)
-    io_unit avg/call        : 199.5 ns  (55.00% of workload time)
-    memory_unit avg/call    : 245.2 ns  (4.22% of workload time)
-    compute_unit avg/call   : 198.0 ns  (0.43% of workload time)
-    samples in/kept/rej%    : 8478720 / 8416620 / 0.73%
-    summaries/predictions   : 529920 / 66240  (totals across all iterations)
-    last prediction         : trend=+0.0244 C/tick projected= 21.83C state=NOMINAL
-  --- power ---
-    vcgencmd samples        : 18 (over 3.17 s sampling window)
-    avg VDD_CORE power      : 0.8509 W
-    avg summed-rail power   : 2.1241 W  (raw PMIC sum, excludes 5V/USB/HAT/NVMe)
-    avg corrected est. power: 3.0202 W  (linear-calibrated, see docs/power_model_notes.md)
-    energy over sampling win: 9.5611 J
-    energy per prediction   : 0.1443 mJ  (across 66240 predictions)
+  governor (post-apply)    : powersave
+  freq snapshot pre-load   : 1500000 kHz  (may be stale for demand governors --
+                             see in-run avg below, which is the trustworthy one)
+  --- results over 5 repeats (mean +/- sample stddev) ---
+    in-run cpu0 frequency   : 1500000 kHz avg  (range 1500000..1500000 kHz across load)
+    time per pipeline call  : 0.001501 +/- 0.000005 s
+    predictions per call    : 32.0   reject%: 0.73%
+    avg VDD_CORE power      : 0.8437 +/- 0.0252 W
+    avg corrected est power : 3.0003 +/- 0.0260 W
+    energy per prediction   : 0.14443 +/- 0.00247 mJ
+    power samples/repeat    : 17.8
+    correctness vs baseline : MATCH (100%)
 
 =================================================================
-Done. 10 trials written to results.csv in the working directory.
+Done. 10 configs x 5 repeats written to results.csv.
 =================================================================
