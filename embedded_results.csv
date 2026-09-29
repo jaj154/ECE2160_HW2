@@ -1,2 +1,2 @@
 peripheral_state,idle_total_w,idle_total_w_std,idle_core_w,active_total_w,active_total_w_std,active_core_w,static_w_derived,dynamic_w_derived,dynamic_pct_of_active,seconds_per_pass,active_energy_per_pass_j,mj_per_prediction,avgW_duty_1.000,avgW_duty_0.500,avgW_duty_0.100,avgW_duty_0.010,avgW_duty_0.001,Jperiod_duty_1.000,Jperiod_duty_0.500,Jperiod_duty_0.100,Jperiod_duty_0.010,Jperiod_duty_0.001
-gui-on_bt-off,2.7069,0.1534,0.5864,4.0054,0.0583,1.6814,2.7069,1.2985,32.42,0.000921,0.0037,0.1153,4.0054,3.3562,2.8368,2.7199,2.7082,0.0037,0.0062,0.0261,0.2505,2.4943
+gui-on_bt-off,2.6726,0.0858,0.5555,4.0034,0.0561,1.6922,2.6726,1.3307,33.24,0.000920,0.0037,0.1151,4.0034,3.3380,2.8057,2.6859,2.6740,0.0037,0.0061,0.0258,0.2471,2.4599
