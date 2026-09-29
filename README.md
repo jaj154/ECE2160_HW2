@@ -68,6 +68,33 @@ re-measuring the same baseline config ten times — still useful as a
 sanity check that the harness's own overhead/workload is consistent,
 but not useful as the actual power comparison.
 
+**Runtime (v3): expect ~3-4 minutes.** The harness now runs each of
+the 10 configs `REPEATS` times (default 5), each repeat sustaining
+load for ~`TARGET_TRIAL_SECONDS` (default 3s), plus a settle delay and
+warm-up pass per config. That's roughly 10 × 5 × 3s ≈ 150s of load
+plus overhead. If you want a faster smoke test, lower `REPEATS` and
+`TARGET_TRIAL_SECONDS` at the top of `src/run_experiments.c`.
+
+### v3 measurement refinements
+
+Three changes over v2, all aimed at measurement precision (not at
+changing which option "wins"):
+- **Settle-before-calibrate**: after applying a config, the harness
+  waits `SETTLE_MS` and runs a discarded warm-up pass before timing,
+  so calibration reflects steady state rather than a mid-transition
+  moment (this is what previously gave the core-count trials short,
+  low-sample windows).
+- **In-run frequency sampling**: cpu0 frequency is now sampled on the
+  same schedule as power, *during* the sustained load, and reported as
+  avg/min/max — instead of a single pre-load snapshot that read stale
+  for demand-based governors (`ondemand`/`schedutil`). The pre-load
+  snapshot is still printed but explicitly flagged as the untrustworthy
+  one.
+- **Repeated trials + variance**: each config is measured `REPEATS`
+  times and `results.csv` carries the mean *and* sample standard
+  deviation for time, power, and energy — so a real effect can be told
+  apart from run-to-run noise (and the paper can show error bars).
+
 Each run produces:
 - a console report per trial (setting changed → confirmed hardware
   state → processing-validation numbers → power numbers)

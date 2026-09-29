@@ -37,8 +37,26 @@ struct power_monitor {
     double          sum_total_power_w;
     int             vcgencmd_available; /* -1 unknown, 0 no, 1 yes */
 
+    /* In-run cpu0 frequency accumulators (sampled alongside power). */
+    long            freq_sample_count;
+    double          sum_freq_khz;
+    long            min_freq_khz;
+    long            max_freq_khz;
+
     struct timespec t_start;
 };
+
+/* Reads cpu0's current scaling frequency (kHz) from sysfs. Returns -1
+ * if unavailable (e.g. non-Pi/no cpufreq). */
+static long read_cpu0_freq_khz(void)
+{
+    FILE *f = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", "r");
+    if (!f) return -1;
+    long khz = -1;
+    if (fscanf(f, "%ld", &khz) != 1) khz = -1;
+    fclose(f);
+    return khz;
+}
 
 static void strip_suffix(char *name, const char *suffix)
 {
@@ -123,6 +141,7 @@ static void *monitor_thread_fn(void *arg)
     while (pm->running) {
         double core_p, total_p;
         int rc = sample_once(&core_p, &total_p);
+        long freq = read_cpu0_freq_khz();   /* sampled DURING load */
 
         pthread_mutex_lock(&pm->lock);
         if (pm->vcgencmd_available < 0) {
@@ -132,6 +151,17 @@ static void *monitor_thread_fn(void *arg)
             pm->sample_count++;
             pm->sum_core_power_w  += core_p;
             pm->sum_total_power_w += total_p;
+        }
+        if (freq > 0) {
+            if (pm->freq_sample_count == 0) {
+                pm->min_freq_khz = freq;
+                pm->max_freq_khz = freq;
+            } else {
+                if (freq < pm->min_freq_khz) pm->min_freq_khz = freq;
+                if (freq > pm->max_freq_khz) pm->max_freq_khz = freq;
+            }
+            pm->freq_sample_count++;
+            pm->sum_freq_khz += (double)freq;
         }
         pthread_mutex_unlock(&pm->lock);
 
@@ -185,6 +215,13 @@ void power_monitor_stop(power_monitor_t *pm, power_summary_t *out)
         out->avg_corrected_total_w =
             out->avg_summed_rails_w * RPI5_POWER_CAL_SLOPE + RPI5_POWER_CAL_INTERCEPT;
         out->energy_joules = out->avg_corrected_total_w * elapsed;
+    }
+
+    out->freq_sample_count = pm->freq_sample_count;
+    if (pm->freq_sample_count > 0) {
+        out->avg_freq_khz = pm->sum_freq_khz / (double)pm->freq_sample_count;
+        out->min_freq_khz = pm->min_freq_khz;
+        out->max_freq_khz = pm->max_freq_khz;
     }
     pthread_mutex_unlock(&pm->lock);
 

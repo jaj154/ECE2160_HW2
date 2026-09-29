@@ -24,6 +24,15 @@ typedef struct {
                                      * (jfikar/RPi5-power); unit-specific,
                                      * treat as an estimate, not ground truth */
     double energy_joules;          /* avg_corrected_total_w * elapsed_seconds */
+
+    /* In-run frequency tracking (cpu0). Sampled on the same schedule as
+     * power, DURING the sustained load -- this is the fix for the v2
+     * problem where frequency was snapshotted once, before load, and
+     * so read stale for demand-based governors (ondemand/schedutil). */
+    long   freq_sample_count;
+    double avg_freq_khz;
+    long   min_freq_khz;
+    long   max_freq_khz;
 } power_summary_t;
 
 typedef struct power_monitor power_monitor_t;
